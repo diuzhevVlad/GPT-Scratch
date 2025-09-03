@@ -1,5 +1,7 @@
 from collections import defaultdict
 from copy import deepcopy
+from typing import List
+import dill
 
 
 class BPE:
@@ -8,7 +10,7 @@ class BPE:
         self._unique_tokens = []
         self.id2token = self.token2id = None
 
-    def fit(self, text: str):
+    def fit(self, text: str) -> None:
         # Find unique symbols & sort them
         self._unique_tokens = sorted(list(set(text)))
         assert len(self._unique_tokens) < self._vocab_size
@@ -49,3 +51,42 @@ class BPE:
         # Creating token ids
         self.id2token = {i: token for i, token in enumerate(self._unique_tokens)}
         self.token2id = {token: i for i, token in enumerate(self._unique_tokens)}
+
+    def encode(self, text: str) -> List[int]:
+        # Divide into simple tokens
+        curr_tokens = list(text)
+
+        # Constructing encoding
+        encoding = []
+        token_idx = 0
+        while token_idx < len(curr_tokens):
+            # Choosing best fitting token to insert
+            insert_tok = curr_tokens[token_idx]
+            insert_len = 1
+            for tok in self.id2token.values():
+                if (
+                    len(tok) > insert_len
+                    and "".join(curr_tokens[token_idx : token_idx + len(tok)]) == tok
+                ):
+                    insert_len = len(tok)
+                    insert_tok = tok
+
+            # Appending encoding
+            encoding.append(self.token2id[insert_tok])
+            token_idx += insert_len
+
+        return encoding
+
+    def decode(self, enc: List[int]) -> str:
+        # Decoding string by token ids
+        return "".join([self.id2token[tok] for tok in enc])
+
+    def save(self, filename):
+        with open(filename, "wb") as f:
+            dill.dump(self, f)
+
+    @classmethod
+    def load(cls, filename):
+        with open(filename, "rb") as f:
+            obj = dill.load(f)
+        return obj
