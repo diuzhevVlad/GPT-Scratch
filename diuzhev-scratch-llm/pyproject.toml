@@ -1,0 +1,40 @@
+[project]
+name = "diuzhev-scratch-llm"
+version = "0.1.0"
+description = "This package contains some code with basic implementations of large language models."
+readme = "README.md"
+authors = [
+  {name = "Vladislav Diuzhev", email = "vladdiuzhev@gmail.com"}
+]
+maintainers = [
+  {name = "Vladislav Diuzhev", email = "vladdiuzhev@gmail.com"}
+]
+classifiers = [
+    # TODO
+]
+license = {text = "MIT"}
+dependencies = [
+  "typer"
+]
+requires-python = ">= 3.12"
+
+[project.optional-dependencies]
+test = [
+    "coverage",  # testing
+    "pytest",  # testing
+    "ruff",  # linting
+    "ty", # checking types
+    "ipdb", # debugging
+]
+
+[tool.ty]
+# All rules are enabled as "error" by default; no need to specify unless overriding.
+# Example override: relax a rule for the entire project (uncomment if needed).
+# rules.TY015 = "warn"  # For invalid-argument-type, warn instead of error.
+
+[tool.ruff]
+line-length = 120
+
+
+[tool.uv]
+package = true
