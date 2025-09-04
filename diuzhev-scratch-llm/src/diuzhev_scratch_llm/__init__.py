@@ -4,3 +4,4 @@ __author__ = """Vladislav Diuzhev"""
 __email__ = 'vladdiuzhev@gmail.com'
 
 from .tokenizer import *
+from .embedding import *
