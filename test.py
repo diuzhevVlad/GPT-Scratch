@@ -1,8 +1,5 @@
-from diuzhev_scratch_llm.tokenizer import BPE
+from diuzhev_scratch_llm.trans_parts import HeadAttention
+import torch
 
-bpe = BPE(31)
-phrase = 'Однажды был случай в далёком Макао: макака коалу в какао макала, коала лениво какао лакала, макака макала, коала икала.'
-bpe.fit(phrase)
-encoded = bpe.encode(phrase)
-print(phrase)
-print("".join([bpe.id2token[tok] for tok in encoded]))
+att = HeadAttention(12, 8, 10)
+att.forward(torch.rand((1,6,12)))

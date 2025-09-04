@@ -5,3 +5,4 @@ __email__ = 'vladdiuzhev@gmail.com'
 
 from .tokenizer import *
 from .embedding import *
+from .trans_parts import *
