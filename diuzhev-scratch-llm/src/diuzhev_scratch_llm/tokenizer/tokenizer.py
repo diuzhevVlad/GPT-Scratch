@@ -6,6 +6,7 @@ import dill
 
 class BPE:
     def __init__(self, vocab_size: int = 50_000):
+        super().__init__()
         self._vocab_size = vocab_size
         self._unique_tokens = []
         self.id2token = self.token2id = None
