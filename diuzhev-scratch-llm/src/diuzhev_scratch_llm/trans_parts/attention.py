@@ -35,3 +35,38 @@ class HeadAttention(nn.Module):
 
         # Att = Softmax(Q @ K^T / sqrt(head_size)) @ V
         return torch.bmm(attention_mat, value)
+
+
+class MultiHeadAttention(nn.Module):
+    def __init__(
+        self,
+        num_heads: int,
+        emb_size: int,
+        head_size: int,
+        max_seq_len: int,
+        dropout: float = 0.1,
+    ):
+        super().__init__()
+
+        # Initializing layers
+        self._heads = nn.ModuleDict(
+            {
+                f"head_{i}": HeadAttention(emb_size, head_size, max_seq_len)
+                for i in range(num_heads)
+            }
+        )
+        self._linear = nn.Linear(head_size * num_heads, emb_size)
+        self._dropout = nn.Dropout(dropout)
+
+        # Saving necessary params
+        self._num_heads = num_heads
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Get multi-head features
+        multi_head_features = torch.cat(
+            [self._heads[f"head_{i}"](x) for i in range(self._num_heads)], dim=-1
+        )
+        multi_head_features = self._linear(multi_head_features)
+
+        # Dropping signals while training
+        return self._dropout(multi_head_features)
