@@ -2,6 +2,7 @@ from collections import defaultdict
 from copy import deepcopy
 from typing import List
 import dill
+from tqdm import tqdm
 
 
 class BPE:
@@ -11,10 +12,18 @@ class BPE:
         self._unique_tokens = []
         self.id2token = self.token2id = None
 
-    def fit(self, text: str) -> None:
+    def fit(self, text: str, show_progress: bool = False) -> None:
         # Find unique symbols & sort them
         self._unique_tokens = sorted(list(set(text)))
         assert len(self._unique_tokens) < self._vocab_size
+
+        pbar = None
+        if show_progress:
+            pbar = tqdm(
+                total=self._vocab_size,
+                initial=len(self._unique_tokens),
+                desc="Building BPE vocab",
+            )
 
         # Choosing the most frequent pair of tokens
         curr_tokens = list(text)
@@ -48,6 +57,12 @@ class BPE:
                 merged_tokens.append(curr_tokens[token_idx])
                 token_idx += 1
             curr_tokens = merged_tokens
+
+            if pbar:
+                pbar.update(1)
+
+        if pbar:
+            pbar.close()
 
         # Creating token ids
         self.id2token = {i: token for i, token in enumerate(self._unique_tokens)}
