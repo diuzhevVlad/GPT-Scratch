@@ -1,8 +1,10 @@
 """Top-level package for LLM Scratch."""
 
 __author__ = """Vladislav Diuzhev"""
-__email__ = 'vladdiuzhev@gmail.com'
+__email__ = "vladdiuzhev@gmail.com"
 
 from .tokenizer import *
 from .embedding import *
 from .trans_parts import *
+from .models import *
+from .datasets import *
