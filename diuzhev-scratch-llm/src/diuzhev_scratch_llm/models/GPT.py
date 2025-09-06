@@ -19,19 +19,21 @@ class GPT(nn.Module):
         super().__init__()
 
         # Initializing layers
-        self._token_emb = TokenEmbeddings(vocab_size, emb_size).to(device)
-        self._pos_emb = PositionalEmbeddings(max_seq_len, emb_size).to(device)
-        self._dropout = nn.Dropout(dropout).to(device)
+        self._token_emb = TokenEmbeddings(vocab_size, emb_size)
+        self._pos_emb = PositionalEmbeddings(max_seq_len, emb_size)
+        self._dropout = nn.Dropout(dropout)
         self._decoders = nn.Sequential(
             *[
                 Decoder(num_heads, emb_size, head_size, max_seq_len, dropout)
                 for _ in range(num_layers)
             ]
-        ).to(device)
-        self._linear = nn.Linear(emb_size, vocab_size).to(device)
+        )
+        self._linear = nn.Linear(emb_size, vocab_size)
 
         # Saving data
         self._max_seq_len = max_seq_len
+        self._device = device
+        self.to(device)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self._token_emb(x) + self._pos_emb(len(x[0]))  # Get embedding
@@ -80,6 +82,35 @@ class GPT(nn.Module):
                 new_col = torch.argmax(prob, dim=-1, keepdim=True)
             x = torch.cat([x, new_col], dim=1)
         return x
+
+    def fit(
+        self,
+        train_loader: torch.utils.data.DataLoader,
+        valid_loader: torch.utils.data.DataLoader,
+        num_epoch: int,
+        learning_rate: float = 0.001,
+    ) -> None:
+        self.to(self._device)
+        opt = torch.optim.Adam(self.parameters(), lr=learning_rate)
+
+        for epoch in range(num_epoch):
+            self.train()
+            for inputs, targets in train_loader:
+                logits = self.forward(inputs)
+                logits = logits.view((-1, logits.size(2)))
+                targets = targets.view(-1)
+                loss = torch.nn.functional.cross_entropy(logits, targets)
+                opt.zero_grad()
+                loss.backward()
+                opt.step()
+
+            self.eval()
+            with torch.no_grad():
+                for inputs, targets in valid_loader:
+                    logits = self.forward(inputs)
+                    logits = logits.view((-1, logits.size(2)))
+                    targets = targets.view(-1)
+                    loss = torch.nn.functional.cross_entropy(logits, targets)
 
     def save(self, path):
         torch.save(

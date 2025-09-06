@@ -5,7 +5,7 @@ from typing import List
 class LLMDataset(torch.utils.data.Dataset):
     def __init__(self, data: List[int], seq_len: int, device: str = "cpu"):
         super().__init__()
-        self._data = torch.tensor(data, dtype=torch.int16, device=device)
+        self._data = torch.tensor(data, dtype=torch.int64, device=device)
         self._seq_len = seq_len
 
     def __len__(self):
