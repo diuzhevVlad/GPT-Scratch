@@ -40,14 +40,45 @@ class GPT(nn.Module):
         x = self._linear(x)  # Final logits
         return x
 
-    def generate(self, x: torch.Tensor, max_new_tokens: int) -> torch.Tensor:
+    def generate(
+        self,
+        x: torch.Tensor,
+        max_new_tokens: int,
+        do_sample: bool,
+        temperature: float = 1.0,
+        top_k: int = None,
+        top_p: float = None,
+    ) -> torch.Tensor:
         for _ in range(max_new_tokens):
-            part = x[:, -min(self._max_seq_len, len(x)) :]
-            logits = self.forward(part)[:, -1, :]
+            part = x[:, -self._max_seq_len :]
+            logits = self.forward(part)[:, -1, :] / temperature
             prob = nn.functional.softmax(
                 logits, dim=-1
             )  # Get prediction from last logit vector
-            x = torch.cat([x, torch.argmax(prob, dim=1, keepdim=True)], dim=1)
+            if do_sample:
+                if top_k:
+                    sorted_prob, sorted_idx = torch.sort(prob, dim=1, descending=True)
+                    logits[
+                        torch.arange(logits.size(0)).unsqueeze(1), sorted_idx[:, top_k:]
+                    ] = -float("inf")
+                    prob = nn.functional.softmax(logits, dim=-1)
+                if top_p:
+                    sorted_prob, sorted_idx = torch.sort(prob, dim=1, descending=True)
+                    cum_sorted_prob = torch.cumsum(sorted_prob, dim=1)
+
+                    nucleus_mask = cum_sorted_prob > top_p
+                    nucleus_mask[:, 0] = 0
+
+                    remove_mask = torch.zeros_like(nucleus_mask)
+                    remove_mask.scatter_(1, sorted_idx, nucleus_mask)
+
+                    logits = logits.masked_fill(remove_mask, -float("inf"))
+                    prob = nn.functional.softmax(logits, dim=-1)
+
+                new_col = torch.multinomial(prob, 1)
+            else:
+                new_col = torch.argmax(prob, dim=-1, keepdim=True)
+            x = torch.cat([x, new_col], dim=1)
         return x
 
     def save(self, path):
